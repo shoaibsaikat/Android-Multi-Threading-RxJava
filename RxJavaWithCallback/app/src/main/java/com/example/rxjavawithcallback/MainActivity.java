@@ -10,6 +10,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.annotations.NonNull;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.ObservableEmitter;
@@ -25,6 +26,10 @@ public class MainActivity extends AppCompatActivity {
         void getUpdate(Integer progress);
     }
 
+    /**
+     * ProgressEmitter is basically the callback registered to get the progress
+     * It also emits onNext, onComplete, onError for the Observer to get the update
+     */
     private class ProgressEmitter implements ITaskCallback {
         final private ObservableEmitter<Integer> emitter;
 
@@ -45,6 +50,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * ProgressObserver is the Observer responsible to update UI with the progress
+     */
     private class ProgressObserver extends DisposableObserver<Integer> {
 
         private ProgressBar pb;
@@ -75,6 +83,11 @@ public class MainActivity extends AppCompatActivity {
 
     private class ObservableTask {
 
+        /**
+         * This function returns the Observable to the registered Observer and calls update function
+         * It also creates and passes the Callback needed in update function
+         * @return : Observable with progress amount
+         */
         public Observable<Integer> observableUpdate() {
             return Observable.create(new ObservableOnSubscribe<Integer>() {
                 @Override
@@ -84,6 +97,10 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
+        /**
+         * This is the function, whose progress we need to show
+         * @param callback : It's the callback, whom progress is returned
+         */
         public void update(ITaskCallback callback) {
             for (int i = 0; i <= 100; i += 10) {
                 try {
@@ -101,6 +118,9 @@ public class MainActivity extends AppCompatActivity {
     private ProgressBar pb2;
     private ExecutorService executorService;
 
+    private ObservableTask task1;
+    private ObservableTask task2;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -114,22 +134,24 @@ public class MainActivity extends AppCompatActivity {
 
         executorService = new ThreadPoolExecutor(4, 5, 60L, TimeUnit.SECONDS, new LinkedBlockingDeque<Runnable>());
 
-        ObservableTask task1 = new ObservableTask();
-        ObservableTask task2 = new ObservableTask();
+        task1 = new ObservableTask();
+        task2 = new ObservableTask();
 
         task1.observableUpdate()
                 .subscribeOn(Schedulers.from(executorService))
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new ProgressObserver(pb1));
 
         task2.observableUpdate()
                 .subscribeOn(Schedulers.from(executorService))
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new ProgressObserver(pb2));
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-
+        
         executorService.shutdown();
     }
 }
