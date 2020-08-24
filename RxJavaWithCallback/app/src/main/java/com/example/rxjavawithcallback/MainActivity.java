@@ -23,7 +23,7 @@ public class MainActivity extends AppCompatActivity {
     private final static int INVALID = -1;
 
     private interface ITaskCallback {
-        void getUpdate(Integer progress);
+        void setUpdate(Integer progress);
     }
 
     /**
@@ -38,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        public void getUpdate(Integer progress) {
+        public void setUpdate(Integer progress) {
             if (progress.intValue() >= 0) {
                 emitter.onNext(progress);
             } else if(progress.intValue() == 100) {
@@ -105,10 +105,10 @@ public class MainActivity extends AppCompatActivity {
             for (int i = 0; i <= 100; i += 10) {
                 try {
                     Thread.sleep(getRandomNumber(10, 1000));
-                    callback.getUpdate(Integer.valueOf(i));
+                    callback.setUpdate(Integer.valueOf(i));
                 } catch (Exception e) {
                     System.out.println(e.getStackTrace().toString());
-                    callback.getUpdate(Integer.valueOf(INVALID));
+                    callback.setUpdate(Integer.valueOf(INVALID));
                 }
             }
         }
@@ -151,7 +151,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        
+
         executorService.shutdown();
     }
 }
